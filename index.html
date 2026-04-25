@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Map Shop Extract</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <h1>Google Map Shop Extract</h1>
+        <p class="subtitle">Google Mapsの検索結果をAIで精査し、本当に関連性の高い店舗をリストアップ</p>
+    </header>
+
+    <main>
+        <!-- API設定 -->
+        <section class="card" id="settings-section">
+            <h2>API設定</h2>
+            <div class="settings-grid">
+                <div class="form-group">
+                    <label for="google-api-key">Google Places API Key</label>
+                    <div class="input-with-toggle">
+                        <input type="password" id="google-api-key" placeholder="Google APIキーを入力">
+                        <button type="button" class="toggle-visibility" data-target="google-api-key">表示</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="openai-api-key">OpenAI API Key</label>
+                    <div class="input-with-toggle">
+                        <input type="password" id="openai-api-key" placeholder="OpenAI APIキーを入力">
+                        <button type="button" class="toggle-visibility" data-target="openai-api-key">表示</button>
+                    </div>
+                </div>
+            </div>
+            <button id="save-keys-btn" class="btn btn-secondary">キーを保存</button>
+            <p class="hint">APIキーはブラウザのローカルストレージに保存されます（外部には送信されません）</p>
+        </section>
+
+        <!-- 検索フォーム -->
+        <section class="card" id="search-section">
+            <h2>検索条件</h2>
+            <div class="search-grid">
+                <div class="form-group">
+                    <label for="search-query">検索キーワード</label>
+                    <input type="text" id="search-query" placeholder="例: 宴会 居酒屋、外壁塗装 業者">
+                </div>
+                <div class="form-group">
+                    <label for="search-location">エリア（住所・地名）</label>
+                    <input type="text" id="search-location" placeholder="例: 東京都渋谷区、大阪市北区">
+                </div>
+                <div class="form-group">
+                    <label for="search-radius">検索半径 (km)</label>
+                    <input type="number" id="search-radius" value="5" min="1" max="50">
+                </div>
+                <div class="form-group">
+                    <label for="min-rating">最低評価</label>
+                    <select id="min-rating">
+                        <option value="0">指定なし</option>
+                        <option value="3">3.0以上</option>
+                        <option value="3.5" selected>3.5以上</option>
+                        <option value="4">4.0以上</option>
+                        <option value="4.5">4.5以上</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="search-intent">検索の意図・条件（AIフィルタリング用）</label>
+                <textarea id="search-intent" rows="3" placeholder="例: 30人規模の宴会ができる居酒屋を探している。個室があると嬉しい。予算は一人5000円程度。&#10;例: 戸建ての外壁塗装をしてくれる地元の業者。実績が豊富で評判が良いところ。"></textarea>
+            </div>
+
+            <div class="search-actions">
+                <button id="search-btn" class="btn btn-primary">検索開始</button>
+                <span id="search-status" class="status-text"></span>
+            </div>
+        </section>
+
+        <!-- 進捗表示 -->
+        <section class="card hidden" id="progress-section">
+            <h2>処理状況</h2>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            <p id="progress-text">準備中...</p>
+            <div id="progress-log" class="log-area"></div>
+        </section>
+
+        <!-- 検索結果 -->
+        <section class="card hidden" id="results-section">
+            <h2>検索結果 <span id="result-count"></span></h2>
+            <div class="results-actions">
+                <button id="export-csv-btn" class="btn btn-secondary">CSVダウンロード</button>
+                <div class="sort-controls">
+                    <label for="sort-by">並び替え:</label>
+                    <select id="sort-by">
+                        <option value="relevance">関連性スコア</option>
+                        <option value="rating">Google評価</option>
+                        <option value="reviews">口コミ数</option>
+                    </select>
+                </div>
+            </div>
+            <div id="results-list" class="results-list"></div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Google Map Shop Extract - APIキーはローカルに保存され、各APIへの直接通信のみに使用されます</p>
+    </footer>
+
+    <script src="js/config.js"></script>
+    <script src="js/places.js"></script>
+    <script src="js/analyzer.js"></script>
+    <script src="js/export.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
