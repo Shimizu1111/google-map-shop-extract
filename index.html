@@ -30,6 +30,29 @@
             <p class="hint">APIキーはブラウザのローカルストレージに保存されます（外部には送信されません）</p>
         </section>
 
+        <!-- 商材情報 -->
+        <section class="card" id="product-section">
+            <h2>商材情報から検索条件を提案</h2>
+            <p class="hint" style="margin-bottom: 12px;">自社の商材情報を入力すると、AIが最適な検索キーワード・条件を提案します</p>
+            <div class="form-group">
+                <label for="product-name">商材名・サービス名</label>
+                <input type="text" id="product-name" placeholder="例: 業務用エスプレッソマシン、法人向け清掃サービス">
+            </div>
+            <div class="form-group" style="margin-top: 12px;">
+                <label for="product-description">商材の説明・特徴</label>
+                <textarea id="product-description" rows="3" placeholder="例: イタリア製の全自動エスプレッソマシン。月額リースも対応。飲食店やオフィスへの導入実績多数。価格帯は50-200万円。"></textarea>
+            </div>
+            <div class="form-group" style="margin-top: 12px;">
+                <label for="product-target">ターゲット顧客</label>
+                <input type="text" id="product-target" placeholder="例: カフェ、レストラン、ホテル、オフィス">
+            </div>
+            <div class="search-actions">
+                <button id="suggest-btn" class="btn btn-primary">検索条件を提案</button>
+                <span id="suggest-status" class="status-text"></span>
+            </div>
+            <div id="suggest-result" class="suggest-result hidden"></div>
+        </section>
+
         <!-- 検索フォーム -->
         <section class="card" id="search-section">
             <h2>検索条件</h2>

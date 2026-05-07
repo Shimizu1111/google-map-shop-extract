@@ -1,6 +1,67 @@
 const Analyzer = {
     OPENAI_URL: 'https://api.openai.com/v1/chat/completions',
 
+    async suggestSearchConditions(productName, productDescription, productTarget, apiKey) {
+        const prompt = `あなたはマーケティングと営業戦略のエキスパートです。以下の商材情報をもとに、Google Mapsで営業先・取引先候補を効率的に見つけるための最適な検索条件を提案してください。
+
+## 商材情報
+商材名: ${productName}
+商材の説明・特徴: ${productDescription || '(未入力)'}
+ターゲット顧客: ${productTarget || '(未入力)'}
+
+## 出力フォーマット
+以下のJSON形式で回答してください:
+{
+  "suggestions": [
+    {
+      "label": "提案の簡潔なタイトル（例: カフェ・喫茶店を探す）",
+      "keyword": "Google Maps検索キーワード（例: カフェ 喫茶店）",
+      "intent": "検索の意図・AIフィルタリング条件（例: エスプレッソやコーヒーにこだわりのあるカフェ。個人経営や小規模チェーンが望ましい。）",
+      "radius": 5,
+      "minRating": "3.5",
+      "reason": "この検索条件を提案する理由（1-2文）"
+    }
+  ]
+}
+
+## ルール
+- suggestionsは2〜4件提案してください
+- keywordはGoogle Mapsの検索で実際にヒットしやすい自然なキーワードにする
+- intentは商材との関連性を判断できる具体的な条件にする
+- radiusは1-50の整数（km）。業種の特性に応じて適切な範囲を設定
+- minRatingは "0"（指定なし）, "3", "3.5", "4", "4.5" のいずれか
+- ターゲットの業種・規模・特徴を踏まえて、多角的な検索戦略を提案する
+
+JSONのみを出力してください。`;
+
+        const res = await fetch(this.OPENAI_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+                model: 'gpt-4o-mini',
+                messages: [
+                    { role: 'system', content: 'あなたはマーケティング戦略アシスタントです。JSONのみを出力してください。' },
+                    { role: 'user', content: prompt }
+                ],
+                temperature: 0.5,
+                max_tokens: 2000,
+            }),
+        });
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(`OpenAI API エラー: ${res.status} - ${err.error?.message || res.statusText}`);
+        }
+
+        const data = await res.json();
+        const content = data.choices[0]?.message?.content || '{}';
+        const jsonStr = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        return JSON.parse(jsonStr);
+    },
+
     async analyzePlaces(places, searchQuery, searchIntent, apiKey, onLog, onProgress) {
         const results = [];
 

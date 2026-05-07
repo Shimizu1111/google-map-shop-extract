@@ -19,6 +19,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultsList = document.getElementById('results-list');
     const exportCsvBtn = document.getElementById('export-csv-btn');
     const sortBy = document.getElementById('sort-by');
+    const productName = document.getElementById('product-name');
+    const productDescription = document.getElementById('product-description');
+    const productTarget = document.getElementById('product-target');
+    const suggestBtn = document.getElementById('suggest-btn');
+    const suggestStatus = document.getElementById('suggest-status');
+    const suggestResult = document.getElementById('suggest-result');
 
     let currentResults = [];
 
@@ -83,6 +89,80 @@ document.addEventListener('DOMContentLoaded', () => {
     function setProgress(percent) {
         progressBar.style.width = `${Math.min(100, percent)}%`;
     }
+
+    // Suggest search conditions from product info
+    suggestBtn.addEventListener('click', async () => {
+        const name = productName.value.trim();
+        if (!name) {
+            alert('商材名・サービス名を入力してください');
+            return;
+        }
+
+        const openaiKey = Config.getOpenAiApiKey();
+        if (!openaiKey) {
+            alert('OpenAI APIキーを設定してください');
+            return;
+        }
+
+        suggestBtn.disabled = true;
+        suggestStatus.textContent = 'AIが検索条件を考えています...';
+        suggestResult.classList.add('hidden');
+
+        try {
+            const result = await Analyzer.suggestSearchConditions(
+                name,
+                productDescription.value.trim(),
+                productTarget.value.trim(),
+                openaiKey
+            );
+
+            const suggestions = result.suggestions || [];
+            if (suggestions.length === 0) {
+                suggestStatus.textContent = '提案を生成できませんでした';
+                return;
+            }
+
+            suggestResult.innerHTML = '<div class="suggest-title">提案された検索条件（クリックで反映）</div>' +
+                suggestions.map((s, i) => `
+                    <div class="suggest-card" data-index="${i}">
+                        <div class="suggest-card-header">
+                            <strong>${escapeHtml(s.label)}</strong>
+                            <button class="btn btn-secondary btn-sm suggest-apply-btn" data-index="${i}">反映</button>
+                        </div>
+                        <div class="suggest-card-body">
+                            <div><span class="suggest-field">キーワード:</span> ${escapeHtml(s.keyword)}</div>
+                            <div><span class="suggest-field">意図・条件:</span> ${escapeHtml(s.intent)}</div>
+                            <div><span class="suggest-field">半径:</span> ${s.radius}km / <span class="suggest-field">最低評価:</span> ${s.minRating === '0' ? '指定なし' : s.minRating + '以上'}</div>
+                            <div class="suggest-reason">${escapeHtml(s.reason)}</div>
+                        </div>
+                    </div>
+                `).join('');
+
+            suggestResult.classList.remove('hidden');
+            suggestStatus.textContent = `${suggestions.length}件の検索条件を提案しました`;
+
+            // Apply suggestion on click
+            suggestResult.querySelectorAll('.suggest-apply-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const idx = parseInt(btn.dataset.index);
+                    const s = suggestions[idx];
+                    searchQuery.value = s.keyword;
+                    searchIntent.value = s.intent;
+                    searchRadius.value = s.radius;
+                    minRating.value = s.minRating;
+                    // Scroll to search section
+                    document.getElementById('search-section').scrollIntoView({ behavior: 'smooth' });
+                    suggestStatus.textContent = `「${s.label}」を検索条件に反映しました`;
+                });
+            });
+
+        } catch (e) {
+            suggestStatus.textContent = `エラー: ${e.message}`;
+        } finally {
+            suggestBtn.disabled = false;
+        }
+    });
 
     // Search
     searchBtn.addEventListener('click', async () => {
