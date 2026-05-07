@@ -47,6 +47,25 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => { searchStatus.textContent = ''; }, 3000);
     });
 
+    // Error display helper
+    function showErrorMessage(message) {
+        // Remove existing error if any
+        const existing = document.querySelector('.error-banner');
+        if (existing) existing.remove();
+
+        const banner = document.createElement('div');
+        banner.className = 'error-banner';
+        banner.innerHTML = `
+            <div class="error-banner-content">
+                <div class="error-banner-title">エラーが発生しました</div>
+                <div class="error-banner-message">${message.replace(/\n/g, '<br>')}</div>
+            </div>
+            <button class="error-banner-close" aria-label="閉じる">&times;</button>
+        `;
+        banner.querySelector('.error-banner-close').addEventListener('click', () => banner.remove());
+        progressSection.insertBefore(banner, progressSection.firstChild);
+    }
+
     // Log helper
     function addLog(message) {
         const entry = document.createElement('div');
@@ -79,6 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
         progressSection.classList.remove('hidden');
         resultsSection.classList.add('hidden');
         progressLog.innerHTML = '';
+        const existingError = document.querySelector('.error-banner');
+        if (existingError) existingError.remove();
         setProgress(0);
         currentResults = [];
 
@@ -133,8 +154,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (e) {
             addLog(`エラー: ${e.message}`);
-            progressText.textContent = `エラーが発生しました`;
-            alert(`エラー: ${e.message}`);
+            progressText.textContent = 'エラーが発生しました';
+            showErrorMessage(e.message);
         } finally {
             searchBtn.disabled = false;
         }

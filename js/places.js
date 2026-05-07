@@ -6,9 +6,22 @@ const Places = {
         const res = await fetch(url);
         const data = await res.json();
         if (data.status !== 'OK' || !data.results.length) {
-            throw new Error(`住所「${address}」の座標を取得できませんでした: ${data.status}`);
+            throw new Error(this._geocodeErrorMessage(address, data.status, data.error_message));
         }
         return data.results[0].geometry.location;
+    },
+
+    _geocodeErrorMessage(address, status, errorMessage) {
+        const details = {
+            'REQUEST_DENIED': 'APIキーが無効、またはAPIキーにHTTPリファラー制限が設定されています。\nGoogle Cloud Console でキーの制限を「なし」または「IPアドレス」に変更してください。\nまた、Geocoding API が有効になっているか確認してください。',
+            'OVER_DAILY_LIMIT': 'APIの1日の利用上限を超えました。Google Cloud Console で課金設定と上限を確認してください。',
+            'OVER_QUERY_LIMIT': 'リクエスト数の上限を超えました。しばらく待ってから再度お試しください。',
+            'INVALID_REQUEST': `「${address}」を住所として認識できませんでした。より具体的な住所や地名を入力してください。`,
+            'ZERO_RESULTS': `「${address}」に該当する場所が見つかりませんでした。表記を変えて再度お試しください。`,
+        };
+        const hint = details[status] || `ステータス: ${status}`;
+        const apiMsg = errorMessage ? `\n(API詳細: ${errorMessage})` : '';
+        return `エリア「${address}」の座標取得に失敗しました。\n\n${hint}${apiMsg}`;
     },
 
     async searchPlaces(query, location, radiusKm, apiKey, onLog) {
@@ -60,7 +73,7 @@ const Places = {
 
         if (!res.ok) {
             const err = await res.json().catch(() => ({}));
-            throw new Error(`Places API エラー: ${res.status} - ${err.error?.message || res.statusText}`);
+            throw new Error(this._apiErrorMessage('Places Search', res.status, err));
         }
 
         const data = await res.json();
@@ -95,7 +108,7 @@ const Places = {
 
         if (!res.ok) {
             const err = await res.json().catch(() => ({}));
-            throw new Error(`Place Details エラー: ${res.status} - ${err.error?.message || res.statusText}`);
+            throw new Error(this._apiErrorMessage('Place Details', res.status, err));
         }
 
         return await res.json();
@@ -148,5 +161,19 @@ const Places = {
 概要: ${summary}
 口コミ:
 ${reviews || '  (口コミなし)'}`;
+    },
+
+    _apiErrorMessage(apiName, httpStatus, errBody) {
+        const msg = errBody?.error?.message || '';
+        const details = {
+            400: `リクエストが不正です。検索条件を確認してください。`,
+            401: `APIキーが無効です。Google Cloud Console でキーを確認してください。`,
+            403: msg.includes('referer')
+                ? `APIキーにHTTPリファラー制限が設定されているため利用できません。\nGoogle Cloud Console でキーの制限を「なし」に変更するか、このサイトのURLをリファラーに追加してください。`
+                : `APIへのアクセスが拒否されました。${apiName} API が有効になっているか、キーの制限設定を確認してください。`,
+            429: `リクエスト数の上限を超えました。しばらく待ってから再度お試しください。`,
+        };
+        const hint = details[httpStatus] || `HTTPステータス ${httpStatus}: ${msg || 'サーバーエラーが発生しました'}`;
+        return `${apiName} API エラー\n\n${hint}`;
     }
 };
