@@ -22,27 +22,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentResults = [];
 
-    // Load saved keys
-    googleKeyInput.value = Config.getGoogleApiKey();
-    openaiKeyInput.value = Config.getOpenAiApiKey();
+    // Show placeholder if keys are already saved (don't expose actual values)
+    if (Config.getGoogleApiKey()) {
+        googleKeyInput.placeholder = '登録済み（変更する場合のみ入力）';
+    }
+    if (Config.getOpenAiApiKey()) {
+        openaiKeyInput.placeholder = '登録済み（変更する場合のみ入力）';
+    }
 
-    // Toggle password visibility
-    document.querySelectorAll('.toggle-visibility').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const input = document.getElementById(btn.dataset.target);
-            if (input.type === 'password') {
-                input.type = 'text';
-                btn.textContent = '隠す';
-            } else {
-                input.type = 'password';
-                btn.textContent = '表示';
-            }
-        });
-    });
-
-    // Save keys
+    // Save keys (empty fields are ignored to preserve existing keys)
     saveKeysBtn.addEventListener('click', () => {
-        Config.saveKeys(googleKeyInput.value.trim(), openaiKeyInput.value.trim());
+        const newGoogle = googleKeyInput.value.trim();
+        const newOpenai = openaiKeyInput.value.trim();
+        if (!newGoogle && !newOpenai) {
+            searchStatus.textContent = '保存するキーを入力してください';
+            setTimeout(() => { searchStatus.textContent = ''; }, 3000);
+            return;
+        }
+        Config.saveKeys(newGoogle, newOpenai);
+        if (newGoogle) {
+            googleKeyInput.value = '';
+            googleKeyInput.placeholder = '登録済み（変更する場合のみ入力）';
+        }
+        if (newOpenai) {
+            openaiKeyInput.value = '';
+            openaiKeyInput.placeholder = '登録済み（変更する場合のみ入力）';
+        }
         searchStatus.textContent = 'APIキーを保存しました';
         setTimeout(() => { searchStatus.textContent = ''; }, 3000);
     });

@@ -123,24 +123,6 @@ textarea {
     margin-bottom: 16px;
 }
 
-.input-with-toggle {
-    display: flex;
-    gap: 8px;
-}
-
-.input-with-toggle input {
-    flex: 1;
-}
-
-.toggle-visibility {
-    padding: 8px 12px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 12px;
-    white-space: nowrap;
-}
 
 /* Buttons */
 .btn {
