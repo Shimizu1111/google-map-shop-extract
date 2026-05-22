@@ -24,27 +24,15 @@ const Places = {
         return `エリア「${address}」の座標取得に失敗しました。\n\n${hint}${apiMsg}`;
     },
 
-    async searchPlaces(query, location, radiusKm, apiKey, onLog) {
+    async searchPlaces(query, location, radiusKm, apiKey, onLog, maxResults = 20) {
         const radiusM = radiusKm * 1000;
         const allPlaces = [];
         let pageToken = null;
 
-        onLog('Google Places APIで検索中...');
+        onLog(`Google Places APIで検索中...（最大${maxResults}件）`);
 
         // Use Text Search (New) API
         const searchUrl = `${this.BASE_URL}:searchText`;
-
-        const requestBody = {
-            textQuery: query,
-            locationBias: {
-                circle: {
-                    center: { latitude: location.lat, longitude: location.lng },
-                    radius: radiusM
-                }
-            },
-            maxResultCount: 20,
-            languageCode: 'ja'
-        };
 
         const fieldMask = [
             'places.id',
@@ -61,25 +49,52 @@ const Places = {
             'places.nationalPhoneNumber',
         ].join(',');
 
-        const res = await fetch(searchUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Goog-Api-Key': apiKey,
-                'X-Goog-FieldMask': fieldMask,
-            },
-            body: JSON.stringify(requestBody),
-        });
+        while (allPlaces.length < maxResults) {
+            const perPage = Math.min(20, maxResults - allPlaces.length);
+            const requestBody = {
+                textQuery: query,
+                locationBias: {
+                    circle: {
+                        center: { latitude: location.lat, longitude: location.lng },
+                        radius: radiusM
+                    }
+                },
+                maxResultCount: perPage,
+                languageCode: 'ja'
+            };
+            if (pageToken) {
+                requestBody.pageToken = pageToken;
+            }
 
-        if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error(this._apiErrorMessage('Places Search', res.status, err));
+            const res = await fetch(searchUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Goog-Api-Key': apiKey,
+                    'X-Goog-FieldMask': fieldMask,
+                },
+                body: JSON.stringify(requestBody),
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(this._apiErrorMessage('Places Search', res.status, err));
+            }
+
+            const data = await res.json();
+            const places = data.places || [];
+            allPlaces.push(...places);
+            onLog(`${allPlaces.length}件取得済み...`);
+
+            pageToken = data.nextPageToken;
+            if (!pageToken || places.length === 0) break;
+
+            // ページ間の待機
+            await new Promise(r => setTimeout(r, 300));
         }
 
-        const data = await res.json();
-        const places = data.places || [];
-        onLog(`${places.length}件の店舗が見つかりました`);
-        return places;
+        onLog(`合計${allPlaces.length}件の店舗が見つかりました`);
+        return allPlaces;
     },
 
     async getPlaceDetails(placeId, apiKey) {

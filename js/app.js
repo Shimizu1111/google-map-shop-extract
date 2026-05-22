@@ -191,6 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const googleKey = Config.getGoogleApiKey();
         const openaiKey = Config.getOpenAiApiKey();
         const radius = parseInt(searchRadius.value) || 5;
+        const maxResults = parseInt(document.getElementById('max-results').value) || 20;
         const minRatingVal = parseFloat(minRating.value) || 0;
         const intent = searchIntent.value.trim();
 
@@ -203,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Step 2: Search places
             progressText.textContent = '店舗を検索中...';
-            const places = await Places.searchPlaces(query, coords, radius, googleKey, addLog);
+            const places = await Places.searchPlaces(query, coords, radius, googleKey, addLog, maxResults);
 
             if (places.length === 0) {
                 addLog('検索結果が0件でした。キーワードやエリアを変更してみてください。');
