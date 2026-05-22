@@ -35,6 +35,7 @@ const Places = {
         const searchUrl = `${this.BASE_URL}:searchText`;
 
         const fieldMask = [
+            'nextPageToken',
             'places.id',
             'places.displayName',
             'places.formattedAddress',
